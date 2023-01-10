@@ -7,6 +7,13 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+#Query Parameter DB
+fake_item_db = [
+    {"item_name": "foo"},
+    {"item_name": "Bar"},
+    {"item_name": "Baz"}
+]
+
 class Item(BaseModel):
     name: str
     price: float
@@ -16,6 +23,7 @@ class ModelName(str, Enum):
     alexnet = "alexnet"
     resnet = "resnet"
     lenet = "lenet"
+
 
 @app.get("/files/{file_path:path}")
 async def read_file(file_path: str):
@@ -33,10 +41,34 @@ async def get_model(model_name: ModelName):
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/items/{items_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+'''
+### Query Parameter Function
 
-@app.put("/items/{items_id}")
+@app.get("/items/")
+async def read_item(skip: int = 0, limit: int = 10):
+    return fake_item_db[skip : skip + limit]
+'''
+
+### Query Parameter Type Conversion
+@app.get("/items/{item_id}")
+async def read_item(item_id: str, q: Union[str, None] = None, short: bool = False):
+    item = {"item_id": item_id}
+    if q:
+        item.update({"q": q})
+    if not short:
+        item.update(
+            {"description": "This is an amazing item that has a long description"}
+        )
+    return item
+
+'''
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: Union[str, None] = None):
+    if q: #q가 None이 아닐 경우
+        return {"item_id": item_id, "q": q}
+    return {"item_id": item_id} #q가 None일 경우
+'''
+
+@app.put("/items/{item_id}")
 def update_item(item_id: int, item: Item):
     return {"item_price": item.price, "item_id": item_id}
